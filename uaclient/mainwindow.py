@@ -1,14 +1,31 @@
 #! /usr/bin/env python3
 
 import sys
+import duckdb
 
 from datetime import datetime
 import logging
 
-from PyQt5.QtCore import pyqtSignal, QFile, QTimer, Qt, QObject, QSettings, QTextStream, QItemSelection, \
-    QCoreApplication
+from PyQt5.QtCore import (
+    pyqtSignal,
+    QFile,
+    QTimer,
+    Qt,
+    QObject,
+    QSettings,
+    QTextStream,
+    QItemSelection,
+    QCoreApplication,
+)
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QIcon
-from PyQt5.QtWidgets import QMainWindow, QMessageBox, QWidget, QApplication, QMenu, QDialog
+from PyQt5.QtWidgets import (
+    QMainWindow,
+    QMessageBox,
+    QWidget,
+    QApplication,
+    QMenu,
+    QDialog,
+)
 
 from uaclient.theme import breeze_resources
 
@@ -68,7 +85,9 @@ class EventUI(object):
         self.window.addAction(self.window.ui.actionSubscribeEvent)
         self.window.addAction(self.window.ui.actionUnsubscribeEvents)
         self.window.addAction(self.window.ui.actionAddToGraph)
-        self._handler.event_fired.connect(self._update_event_model, type=Qt.QueuedConnection)
+        self._handler.event_fired.connect(
+            self._update_event_model, type=Qt.QueuedConnection
+        )
 
         # accept drops
         self.model.canDropMimeData = self.canDropMimeData
@@ -141,7 +160,9 @@ class DataChangeUI(object):
         self.window.addAction(self.window.ui.actionUnsubscribeDataChange)
 
         # handle subscriptions
-        self._subhandler.data_change_fired.connect(self._update_subscription_model, type=Qt.QueuedConnection)
+        self._subhandler.data_change_fired.connect(
+            self._update_subscription_model, type=Qt.QueuedConnection
+        )
 
         # accept drops
         self.model.canDropMimeData = self.canDropMimeData
@@ -237,9 +258,17 @@ class Window(QMainWindow):
         QCoreApplication.setApplicationName("OpcUaClient")
         self.settings = QSettings()
 
-        self._address_list = self.settings.value("address_list", ["opc.tcp://localhost:4840", "opc.tcp://localhost:53530/OPCUA/SimulationServer/"])
+        self._address_list = self.settings.value(
+            "address_list",
+            [
+                "opc.tcp://localhost:4840",
+                "opc.tcp://localhost:53530/OPCUA/SimulationServer/",
+            ],
+        )
         print("ADR", self._address_list)
-        self._address_list_max_count = int(self.settings.value("address_list_max_count", 10))
+        self._address_list_max_count = int(
+            self.settings.value("address_list_max_count", 10)
+        )
 
         # init widgets
         for addr in self._address_list:
@@ -250,7 +279,9 @@ class Window(QMainWindow):
         self.tree_ui = TreeWidget(self.ui.treeView)
         self.tree_ui.error.connect(self.show_error)
         self.setup_context_menu_tree()
-        self.ui.treeView.selectionModel().currentChanged.connect(self._update_actions_state)
+        self.ui.treeView.selectionModel().currentChanged.connect(
+            self._update_actions_state
+        )
 
         self.refs_ui = RefsWidget(self.ui.refView)
         self.refs_ui.error.connect(self.show_error)
@@ -261,7 +292,9 @@ class Window(QMainWindow):
         self.graph_ui = GraphUI(self, self.uaclient)
 
         self.ui.addrComboBox.currentTextChanged.connect(self._uri_changed)
-        self._uri_changed(self.ui.addrComboBox.currentText())  # force update for current value at startup
+        self._uri_changed(
+            self.ui.addrComboBox.currentText()
+        )  # force update for current value at startup
 
         self.ui.treeView.selectionModel().selectionChanged.connect(self.show_refs)
         self.ui.actionCopyPath.triggered.connect(self.tree_ui.copy_path)
@@ -271,7 +304,10 @@ class Window(QMainWindow):
         self.ui.treeView.selectionModel().selectionChanged.connect(self.show_attrs)
         self.ui.attrRefreshButton.clicked.connect(self.show_attrs)
 
-        self.resize(int(self.settings.value("main_window_width", 800)), int(self.settings.value("main_window_height", 600)))
+        self.resize(
+            int(self.settings.value("main_window_width", 800)),
+            int(self.settings.value("main_window_height", 600)),
+        )
         data = self.settings.value("main_window_state", None)
         if data:
             self.restoreState(data)
@@ -284,7 +320,9 @@ class Window(QMainWindow):
         self.ui.actionDisconnect.triggered.connect(self.disconnect)
 
         self.ui.connectOptionButton.clicked.connect(self.show_connection_dialog)
-        self.ui.actionClient_Application_Certificate.triggered.connect(self.show_application_certificate_dialog)
+        self.ui.actionClient_Application_Certificate.triggered.connect(
+            self.show_application_certificate_dialog
+        )
         self.ui.actionDark_Mode.triggered.connect(self.dark_mode)
 
     def _uri_changed(self, uri):
@@ -312,11 +350,11 @@ class Window(QMainWindow):
             self.uaclient.application_certificate_path = dia.certificate_path
             self.uaclient.application_private_key_path = dia.private_key_path
         self.uaclient.save_application_certificate_settings()
-            
+
     @trycatchslot
     def show_refs(self, selection):
         if isinstance(selection, QItemSelection):
-            if not selection.indexes(): # no selection
+            if not selection.indexes():  # no selection
                 return
 
         node = self.get_current_node()
@@ -326,7 +364,7 @@ class Window(QMainWindow):
     @trycatchslot
     def show_attrs(self, selection):
         if isinstance(selection, QItemSelection):
-            if not selection.indexes(): # no selection
+            if not selection.indexes():  # no selection
                 return
 
         node = self.get_current_node()
@@ -336,7 +374,9 @@ class Window(QMainWindow):
     def show_error(self, msg):
         logger.warning("showing error: %s")
         self.ui.statusBar.show()
-        self.ui.statusBar.setStyleSheet("QStatusBar { background-color : red; color : black; }")
+        self.ui.statusBar.setStyleSheet(
+            "QStatusBar { background-color : red; color : black; }"
+        )
         self.ui.statusBar.showMessage(str(msg))
         QTimer.singleShot(1500, self.ui.statusBar.hide)
 
@@ -384,7 +424,6 @@ class Window(QMainWindow):
             self.datachange_ui.clear()
             self.event_ui.clear()
 
-
     def closeEvent(self, event):
         self.tree_ui.save_state()
         self.attrs_ui.save_state()
@@ -418,7 +457,9 @@ class Window(QMainWindow):
 
     def setup_context_menu_tree(self):
         self.ui.treeView.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui.treeView.customContextMenuRequested.connect(self._show_context_menu_tree)
+        self.ui.treeView.customContextMenuRequested.connect(
+            self._show_context_menu_tree
+        )
         self._contextMenu = QMenu()
         self.addAction(self.ui.actionCopyPath)
         self.addAction(self.ui.actionCopyNodeId)
@@ -463,10 +504,10 @@ def main():
     logging.getLogger().addHandler(handler)
     logging.getLogger("uaclient").setLevel(logging.INFO)
     logging.getLogger("uawidgets").setLevel(logging.INFO)
-    #logging.getLogger("opcua").setLevel(logging.INFO)  # to enable logging of ua client library
+    # logging.getLogger("opcua").setLevel(logging.INFO)  # to enable logging of ua client library
 
     # set stylesheet
-    if (QSettings().value("dark_mode", "false") == "true"):
+    if QSettings().value("dark_mode", "false") == "true":
         file = QFile(":/dark.qss")
         file.open(QFile.ReadOnly | QFile.Text)
         stream = QTextStream(file)
