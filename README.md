@@ -10,6 +10,10 @@ It has also a contextual menu with a few usefull function like putting the mode 
 
 ![Screenshot](/screenshot.png?raw=true "Screenshot")
 
+The Fork: 
+* The fork adds the ability to log data in a duckdb database. As default it creates a duckdb file on your home with the name opcua.duckdb. 
+* Using a duckdb client e.g. DBeaver and onnecting to the database you get a history of all datapoints to which you subscribe. Reading and writing at the same time is not yet supported.  
+
 What works:
 * connecting and disconnecting
 * browsing with icons per node types
