@@ -240,6 +240,7 @@ class DataChangeUI(object):
                 it_ts.setText(timestamp)
                 # added duckdb logging
                 self.log_duckdb(
+                    display_name=str(node.read_display_name().Text),
                     node_id=node.nodeid.to_string(),
                     value=value,
                     data_type=str(node.get_data_type_as_variant_type()),
@@ -247,9 +248,11 @@ class DataChangeUI(object):
                 )
             i += 1
 
-    def log_duckdb(self, node_id, value, data_type, timestamp):
+    def log_duckdb(self, display_name, node_id, value, data_type, timestamp):
         if self.duckdb_logger:
-            self.duckdb_logger.log_data(node_id, value, data_type, timestamp)
+            self.duckdb_logger.log_data(
+                display_name, node_id, value, data_type, timestamp
+            )
         else:
             print("DuckDB logger not initialized. Please set up logging first.")
 
@@ -295,7 +298,14 @@ class Window(QMainWindow):
         QCoreApplication.setOrganizationName("FreeOpcUa")
         QCoreApplication.setApplicationName("OpcUaClient")
         self.settings = QSettings()
-
+        self.settings.setValue(
+            "address_list",
+            [
+                "opc.tcp://vm-388d63f4.test-server.ag:4840",
+                "opc.tcp://localhost.ag:4840",
+                "opc.tcp://localhost:53530/OPCUA/SimulationServer/",
+            ],
+        )
         self._address_list = self.settings.value(
             "address_list",
             [

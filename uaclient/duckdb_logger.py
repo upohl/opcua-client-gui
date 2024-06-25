@@ -3,6 +3,7 @@ import duckdb
 
 class DuckDBLogger:
     def __init__(self, db_path):
+        # todo IOException handling if file is already in use.
         self.conn = duckdb.connect(db_path)
         self.create_table()
 
@@ -11,6 +12,7 @@ class DuckDBLogger:
             """
             CREATE TABLE IF NOT EXISTS opcua_logs (
                 timestamp TIMESTAMP,
+                display_name VARCHAR,
                 node_id VARCHAR,
                 value VARCHAR,
                 data_type VARCHAR,
@@ -18,13 +20,13 @@ class DuckDBLogger:
         """
         )
 
-    def log_data(self, node_id, value, data_type, timestamp):
+    def log_data(self, display_name, node_id, value, data_type, timestamp):
         self.conn.execute(
             """
-            INSERT INTO opcua_logs (timestamp, node_id, value, data_type)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO opcua_logs (timestamp, display_name, node_id, value, data_type)
+            VALUES (?, ?, ?, ?, ?)
         """,
-            (timestamp, node_id, str(value), data_type),
+            (timestamp, display_name, node_id, str(value), data_type),
         )
 
     def close(self):
