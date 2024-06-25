@@ -2,6 +2,8 @@
 
 import sys
 import duckdb
+import os
+from pathlib import Path
 
 from datetime import datetime
 import logging
@@ -23,8 +25,10 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QWidget,
     QApplication,
+    QLineEdit,
     QMenu,
     QDialog,
+    QInputDialog,
 )
 
 from uaclient.theme import breeze_resources
@@ -45,6 +49,8 @@ from uawidgets.refs_widget import RefsWidget
 from uawidgets.utils import trycatchslot
 from uawidgets.logger import QtHandler
 from uawidgets.call_method_dialog import CallMethodDialog
+
+from uaclient.duckdb_logger import DuckDBLogger
 
 
 logger = logging.getLogger(__name__)
@@ -143,7 +149,7 @@ class EventUI(object):
 
 class DataChangeUI(object):
 
-    def __init__(self, window, uaclient):
+    def __init__(self, window, uaclient, logger):
         self.window = window
         self.uaclient = uaclient
         self._subhandler = DataChangeHandler()
@@ -151,6 +157,8 @@ class DataChangeUI(object):
         self.model = QStandardItemModel()
         self.window.ui.subView.setModel(self.model)
         self.window.ui.subView.horizontalHeader().setSectionResizeMode(1)
+
+        self.duckdb_logger = logger
 
         self.window.ui.actionSubscribeDataChange.triggered.connect(self._subscribe)
         self.window.ui.actionUnsubscribeDataChange.triggered.connect(self._unsubscribe)
@@ -230,7 +238,26 @@ class DataChangeUI(object):
                 it.setText(value)
                 it_ts = self.model.item(i, 2)
                 it_ts.setText(timestamp)
+                # added duckdb logging
+                self.log_duckdb(
+                    node_id=node.nodeid.to_string(),
+                    value=value,
+                    data_type=str(node.get_data_type_as_variant_type()),
+                    timestamp=timestamp,
+                )
             i += 1
+
+    def log_duckdb(self, node_id, value, data_type, timestamp):
+        if self.duckdb_logger:
+            self.duckdb_logger.log_data(node_id, value, data_type, timestamp)
+        else:
+            print("DuckDB logger not initialized. Please set up logging first.")
+
+    def closeEvent(self, event):
+        if hasattr(self, "duckdb_logger") and self.duckdb_logger:
+            self.duckdb_logger.close()
+        # ... any other cleanup code ...
+        super().closeEvent(event)
 
 
 class Window(QMainWindow):
@@ -239,7 +266,18 @@ class Window(QMainWindow):
         QMainWindow.__init__(self)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        # Connect the new action
+        self.ui.actionSetupDuckDBLogging.triggered.connect(self.setup_duckdb_dialog)
+
         self.setWindowIcon(QIcon(":/network.svg"))
+
+        # ... existing initialization code ...
+        self.duckdb_logger = None
+
+        # Initialize DuckDBLogger with default path
+        default_path = self.get_default_duckdb_path()
+        self.setup_duckdb_logging(default_path)
 
         # fix stuff imposible to do in qtdesigner
         # remove dock titlebar for addressbar
@@ -261,7 +299,8 @@ class Window(QMainWindow):
         self._address_list = self.settings.value(
             "address_list",
             [
-                "opc.tcp://localhost:4840",
+                "opc.tcp://vm-388d63f4.test-server.ag:4840",
+                "opc.tcp://localhost.ag:4840",
                 "opc.tcp://localhost:53530/OPCUA/SimulationServer/",
             ],
         )
@@ -287,7 +326,7 @@ class Window(QMainWindow):
         self.refs_ui.error.connect(self.show_error)
         self.attrs_ui = AttrsWidget(self.ui.attrView)
         self.attrs_ui.error.connect(self.show_error)
-        self.datachange_ui = DataChangeUI(self, self.uaclient)
+        self.datachange_ui = DataChangeUI(self, self.uaclient, self.duckdb_logger)
         self.event_ui = EventUI(self, self.uaclient)
         self.graph_ui = GraphUI(self, self.uaclient)
 
@@ -324,6 +363,35 @@ class Window(QMainWindow):
             self.show_application_certificate_dialog
         )
         self.ui.actionDark_Mode.triggered.connect(self.dark_mode)
+
+    def get_default_duckdb_path(self):
+        home_dir = Path.home()
+        return str(home_dir / "opcua.duckdb")
+
+    def setup_duckdb_dialog(self):
+        default_path = self.get_default_duckdb_path()
+        db_path, ok = QInputDialog.getText(
+            self,
+            "DuckDB Setup",
+            "Enter DuckDB file path:",
+            QLineEdit.Normal,
+            default_path,
+        )
+        if ok:
+            if not db_path:  # If the user cleared the input, use the default path
+                db_path = default_path
+            self.setup_duckdb_logging(db_path)
+            QMessageBox.information(
+                self,
+                "DuckDB Setup",
+                f"DuckDB logging configured successfully!\nPath: {db_path}",
+            )
+
+    def setup_duckdb_logging(self, db_path):
+        if self.duckdb_logger:
+            self.duckdb_logger.close()  # Close existing connection if any
+        self.duckdb_logger = DuckDBLogger(db_path)
+        print(f"DuckDB logging set up with path: {db_path}")
 
     def _uri_changed(self, uri):
         self.uaclient.load_security_settings(uri)

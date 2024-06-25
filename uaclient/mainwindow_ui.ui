@@ -85,6 +85,7 @@
     </property>
     <addaction name="actionDark_Mode"/>
     <addaction name="actionClient_Application_Certificate"/>
+    <addaction name="actionSetupDuckDBLogging"/>
    </widget>
    <addaction name="menuOPC_UA_Client"/>
    <addaction name="menuSettings"/>
@@ -472,6 +473,14 @@
     <string>Disconnect from server</string>
    </property>
   </action>
+  <action name="actionSetupDuckDBLogging">
+ <property name="text">
+  <string>Setup DuckDB Logging</string>
+ </property>
+ <property name="toolTip">
+  <string>Configure DuckDB logging settings</string>
+ </property>
+</action>
   <action name="actionSubscribeDataChange">
    <property name="text">
     <string>&amp;Subscribe to data change</string>
