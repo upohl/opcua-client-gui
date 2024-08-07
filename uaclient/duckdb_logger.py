@@ -5,6 +5,7 @@ class DuckDBLogger:
     def __init__(self, db_path):
         # todo IOException handling if file is already in use.
         self.conn = duckdb.connect(db_path)
+        self.is_connected = True
         self.create_table()
 
     def create_table(self):
@@ -31,6 +32,17 @@ class DuckDBLogger:
 
     def close(self):
         self.conn.close()
+        self.is_connected = False
+        print("Inside logger closed")
+
+    def check_if_open(self):
+        return self.is_connected
+
+    def reconnect(self, path):
+        self.conn = duckdb.connect(path)
+        self.is_connected = True
+        self.create_table()
+        print("Inside logger reconnect")
 
     def data_change_handler(self, node, val, data):
         # Existing code...

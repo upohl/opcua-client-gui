@@ -124,6 +124,7 @@ class EventUI(object):
         if node in self._subscribed_nodes:
             logger.info("already subscribed to event for node: %s", node)
             return
+        self.window.check_duckdb_connection_before_subcribe()
         logger.info("Subscribing to events for %s", node)
         self.window.ui.evDockWidget.raise_()
         try:
@@ -141,6 +142,7 @@ class EventUI(object):
             return
         self._subscribed_nodes.remove(node)
         self.uaclient.unsubscribe_events(node)
+        self.window.check_duckdb_connection_after_unsubcribe()
 
     @trycatchslot
     def _update_event_model(self, event):
@@ -200,6 +202,7 @@ class DataChangeUI(object):
         if node in self._subscribed_nodes:
             logger.warning("allready subscribed to node: %s ", node)
             return
+        self.window.check_duckdb_connection_before_subcribe()
         self.model.setHorizontalHeaderLabels(["DisplayName", "Value", "Timestamp"])
         text = str(node.read_display_name().Text)
         row = [QStandardItem(text), QStandardItem("No Data yet"), QStandardItem("")]
@@ -228,6 +231,7 @@ class DataChangeUI(object):
             if item.data() == node:
                 self.model.removeRow(i)
             i += 1
+        self.window.check_duckdb_connection_after_unsubcribe()
 
     def _update_subscription_model(self, node, value, timestamp):
         i = 0
@@ -279,8 +283,8 @@ class Window(QMainWindow):
         self.duckdb_logger = None
 
         # Initialize DuckDBLogger with default path
-        default_path = self.get_default_duckdb_path()
-        self.setup_duckdb_logging(default_path)
+        self.default_duckdb_path = self.get_default_duckdb_path()
+        self.setup_duckdb_logging(self.default_duckdb_path)
 
         # fix stuff imposible to do in qtdesigner
         # remove dock titlebar for addressbar
@@ -574,6 +578,19 @@ class Window(QMainWindow):
         msg.setText("Restart for changes to take effect")
         msg.exec_()
 
+    # Checks if there is no datachange or eventchange subscribtion. If there is not, the duckdb logger gets closed
+    def check_duckdb_connection_after_unsubcribe(self):
+        print("Check DuckDB connection")
+        if len(self.event_ui._subscribed_nodes) == 0 & len(self.datachange_ui._subscribed_nodes) == 0:
+            self.duckdb_logger.close()
+            print("DuckDB connection closed")
+
+    # checksn if there is a duckdblogger connection before a subscription
+    def check_duckdb_connection_before_subcribe(self):
+        print("Check DuckDB connection before subcribe")
+        if not self.duckdb_logger.check_if_open()==True:
+            print("Connect to Duckdb")
+            self.duckdb_logger.reconnect(self.default_duckdb_path)
 
 def main():
     app = QApplication(sys.argv)
