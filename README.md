@@ -19,9 +19,8 @@ What works:
 * browsing with icons per node types
 * showing attributes and references
 * subscribing to variable
-* available on pip: sudo pip install opcua-client
-* remember connections and show connection history
-* subscribing to events
+* available on pip: sudo pip install git+https://gitlab.adesso-group.com/77446dc9/opcua-client-gui.git
+* subscribing to events and logging them
 * write variable node values
 * gui for certificates
 * gui for encryption 
@@ -31,6 +30,7 @@ What works:
 
 TODO (listed after priority):
 
+* remember connections and show connection history
 * detect lost connection and automatically reconnect 
 * gui for loging with certificate or user/password (can currently be done by writting them in uri)
 * Maybe read history
@@ -40,24 +40,24 @@ TODO (listed after priority):
 
 *Note: PyQT 5 is required.*
 
-### Linux:
+### Linux: (not tested)
 
 1. Make sure python and python-pip is installed  
-2. `pip3 install opcua-client`  
-4. Run with: `opcua-client`  
+2. `pip3 install git+https://gitlab.adesso-group.com/77446dc9/opcua-client-gui.git@duckdb-logger`  
+4. Run with: `opcua-client-adesso`  
   
 ### Windows:  
 
 1. Install winpython https://winpython.github.io/ , install the version including pyqt5!
-3. Use pip to install opcua-client: `pip install opcua-client`  
-4. Run via the script pip created: `YOUR_INSTALL_PATH\Python\Python35\Scripts\opcua-client.exe`  
+2. Use pip to install opcua-client: `pip install git+https://gitlab.adesso-group.com/77446dc9/opcua-client-gui.git@duckdb-logger`
+3. Run via the script pip created: `YOUR_PYTHON_INSTALL_PATH\Scripts\opcua-client-adesso.exe`
 
 To update to the latest release run: `pip install opcua-client --upgrade`
 
-### MacOS
+### MacOS (not tested)
 
 1. Make sure python, python-pip and homebrew is installed
 2. `brew install pyqt@5`
-3. `pip3 install opcua-client pyqtgraph cryptography numpy`
-4. Run with `opcua-client`
+3. `pip3 install git+https://gitlab.adesso-group.com/77446dc9/opcua-client-gui.git@duckdb-logger cryptography numpy`
+4. Run with `opcua-client-adesso`
 
