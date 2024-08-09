@@ -78,7 +78,7 @@ class EventHandler(QObject):
 
 class EventUI(object):
 
-    def __init__(self, window, uaclient):
+    def __init__(self, window, uaclient, logger):
         self.window = window
         self.uaclient = uaclient
         self._handler = EventHandler()
@@ -94,6 +94,8 @@ class EventUI(object):
         self._handler.event_fired.connect(
             self._update_event_model, type=Qt.QueuedConnection
         )
+
+        self.duckdb_logger = logger
 
         # accept drops
         self.model.canDropMimeData = self.canDropMimeData
@@ -124,6 +126,7 @@ class EventUI(object):
         if node in self._subscribed_nodes:
             logger.info("already subscribed to event for node: %s", node)
             return
+        self.window.check_duckdb_connection_before_subcribe()
         logger.info("Subscribing to events for %s", node)
         self.window.ui.evDockWidget.raise_()
         try:
@@ -141,11 +144,20 @@ class EventUI(object):
             return
         self._subscribed_nodes.remove(node)
         self.uaclient.unsubscribe_events(node)
+        self.window.check_duckdb_connection_after_unsubcribe()
 
     @trycatchslot
     def _update_event_model(self, event):
         self.model.appendRow([QStandardItem(str(event))])
+        self.log_duckdb(str(event), datetime.now())
 
+    def log_duckdb(self, event, timestamp):
+        if self.duckdb_logger:
+            self.duckdb_logger.log_event(
+                event, timestamp
+            )
+        else:
+            print("DuckDB logger not initialized. Please set up logging first.")
 
 class DataChangeUI(object):
 
@@ -200,6 +212,7 @@ class DataChangeUI(object):
         if node in self._subscribed_nodes:
             logger.warning("allready subscribed to node: %s ", node)
             return
+        self.window.check_duckdb_connection_before_subcribe()
         self.model.setHorizontalHeaderLabels(["DisplayName", "Value", "Timestamp"])
         text = str(node.read_display_name().Text)
         row = [QStandardItem(text), QStandardItem("No Data yet"), QStandardItem("")]
@@ -228,6 +241,7 @@ class DataChangeUI(object):
             if item.data() == node:
                 self.model.removeRow(i)
             i += 1
+        self.window.check_duckdb_connection_after_unsubcribe()
 
     def _update_subscription_model(self, node, value, timestamp):
         i = 0
@@ -279,8 +293,8 @@ class Window(QMainWindow):
         self.duckdb_logger = None
 
         # Initialize DuckDBLogger with default path
-        default_path = self.get_default_duckdb_path()
-        self.setup_duckdb_logging(default_path)
+        self.default_duckdb_path = self.get_default_duckdb_path()
+        self.setup_duckdb_logging()
 
         # fix stuff imposible to do in qtdesigner
         # remove dock titlebar for addressbar
@@ -301,6 +315,7 @@ class Window(QMainWindow):
         self.settings.setValue(
             "address_list",
             [
+                "opc.tcp://127.0.0.1:4840",
                 "opc.tcp://vm-388d63f4.test-server.ag:4840",
                 "opc.tcp://localhost.ag:4840",
                 "opc.tcp://localhost:53530/OPCUA/SimulationServer/",
@@ -309,6 +324,7 @@ class Window(QMainWindow):
         self._address_list = self.settings.value(
             "address_list",
             [
+                "opc.tcp://127.0.0.1:4840",
                 "opc.tcp://vm-388d63f4.test-server.ag:4840",
                 "opc.tcp://localhost.ag:4840",
                 "opc.tcp://localhost:53530/OPCUA/SimulationServer/",
@@ -337,7 +353,7 @@ class Window(QMainWindow):
         self.attrs_ui = AttrsWidget(self.ui.attrView)
         self.attrs_ui.error.connect(self.show_error)
         self.datachange_ui = DataChangeUI(self, self.uaclient, self.duckdb_logger)
-        self.event_ui = EventUI(self, self.uaclient)
+        self.event_ui = EventUI(self, self.uaclient, self.duckdb_logger)
         self.graph_ui = GraphUI(self, self.uaclient)
 
         self.ui.addrComboBox.currentTextChanged.connect(self._uri_changed)
@@ -397,11 +413,10 @@ class Window(QMainWindow):
                 f"DuckDB logging configured successfully!\nPath: {db_path}",
             )
 
-    def setup_duckdb_logging(self, db_path):
+    def setup_duckdb_logging(self):
         if self.duckdb_logger:
             self.duckdb_logger.close()  # Close existing connection if any
-        self.duckdb_logger = DuckDBLogger(db_path)
-        print(f"DuckDB logging set up with path: {db_path}")
+        self.duckdb_logger = DuckDBLogger()
 
     def _uri_changed(self, uri):
         self.uaclient.load_security_settings(uri)
@@ -501,6 +516,7 @@ class Window(QMainWindow):
             self.attrs_ui.clear()
             self.datachange_ui.clear()
             self.event_ui.clear()
+            self.duckdb_logger.close()
 
     def closeEvent(self, event):
         self.tree_ui.save_state()
@@ -574,6 +590,15 @@ class Window(QMainWindow):
         msg.setText("Restart for changes to take effect")
         msg.exec_()
 
+    # Checks if there is no datachange or eventchange subscribtion. If there is not, the duckdb logger gets closed
+    def check_duckdb_connection_after_unsubcribe(self):
+        if len(self.event_ui._subscribed_nodes) == 0 and len(self.datachange_ui._subscribed_nodes) == 0:
+            self.duckdb_logger.close()
+
+    # checksn if there is a duckdblogger connection before a subscription
+    def check_duckdb_connection_before_subcribe(self):
+        if not self.duckdb_logger.check_if_open()==True:
+            self.duckdb_logger.connect(self.default_duckdb_path)
 
 def main():
     app = QApplication(sys.argv)

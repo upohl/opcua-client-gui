@@ -2,10 +2,9 @@ import duckdb
 
 
 class DuckDBLogger:
-    def __init__(self, db_path):
+    def __init__(self):
         # todo IOException handling if file is already in use.
-        self.conn = duckdb.connect(db_path)
-        self.create_table()
+        self.is_connected = False
 
     def create_table(self):
         self.conn.execute(
@@ -19,6 +18,14 @@ class DuckDBLogger:
             )
         """
         )
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS opcua_event_logs (
+                timestamp TIMESTAMP,
+                event VARCHAR,
+            )
+        """
+        )
 
     def log_data(self, display_name, node_id, value, data_type, timestamp):
         self.conn.execute(
@@ -29,8 +36,26 @@ class DuckDBLogger:
             (timestamp, display_name, node_id, str(value), data_type),
         )
 
+    def log_event(self, event, timestamp):
+        self.conn.execute(
+            """
+            INSERT INTO opcua_event_logs (timestamp, event)
+            VALUES (?, ?)
+        """,
+            (timestamp, event),
+        )
+
     def close(self):
         self.conn.close()
+        self.is_connected = False
+
+    def check_if_open(self):
+        return self.is_connected
+
+    def connect(self, path):
+        self.conn = duckdb.connect(path)
+        self.is_connected = True
+        self.create_table()
 
     def data_change_handler(self, node, val, data):
         # Existing code...

@@ -1,6 +1,6 @@
-asyncua==0.9.92
+asyncua==1.1.5
 duckdb==1.0.0
-numpy==2.0.0
+numpy==2.0.1
 opcua==0.98.13
 opcua_widgets==0.6.1
 PyQt5==5.15.10
