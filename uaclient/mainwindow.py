@@ -154,7 +154,7 @@ class EventUI(object):
     def log_duckdb(self, event, timestamp):
         if self.duckdb_logger:
             self.duckdb_logger.log_event(
-                event, timestamp
+                event, timestamp, self.window.server_uri
             )
         else:
             print("DuckDB logger not initialized. Please set up logging first.")
@@ -265,7 +265,7 @@ class DataChangeUI(object):
     def log_duckdb(self, display_name, node_id, value, data_type, timestamp):
         if self.duckdb_logger:
             self.duckdb_logger.log_data(
-                display_name, node_id, value, data_type, timestamp
+                display_name, node_id, value, data_type, timestamp, self.window.server_uri
             )
         else:
             print("DuckDB logger not initialized. Please set up logging first.")
@@ -312,6 +312,7 @@ class Window(QMainWindow):
         QCoreApplication.setOrganizationName("FreeOpcUa")
         QCoreApplication.setApplicationName("OpcUaClient")
         self.settings = QSettings()
+        self.server_uri = ""
         self.settings.setValue(
             "address_list",
             [
@@ -483,6 +484,7 @@ class Window(QMainWindow):
     def connect(self):
         uri = self.ui.addrComboBox.currentText()
         uri = uri.strip()
+        self.server_uri = uri
         try:
             self.uaclient.connect(uri)
         except Exception as ex:

@@ -15,6 +15,7 @@ class DuckDBLogger:
                 node_id VARCHAR,
                 value VARCHAR,
                 data_type VARCHAR,
+                server VARCHAR
             )
         """
         )
@@ -23,26 +24,27 @@ class DuckDBLogger:
             CREATE TABLE IF NOT EXISTS opcua_event_logs (
                 timestamp TIMESTAMP,
                 event VARCHAR,
+                server VARCHAR
             )
         """
         )
 
-    def log_data(self, display_name, node_id, value, data_type, timestamp):
+    def log_data(self, display_name, node_id, value, data_type, timestamp, server):
         self.conn.execute(
             """
-            INSERT INTO opcua_logs (timestamp, display_name, node_id, value, data_type)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO opcua_logs (timestamp, display_name, node_id, value, data_type, server)
+            VALUES (?, ?, ?, ?, ?, ?)
         """,
-            (timestamp, display_name, node_id, str(value), data_type),
+            (timestamp, display_name, node_id, str(value), data_type, server),
         )
 
-    def log_event(self, event, timestamp):
+    def log_event(self, event, timestamp, server): #TODO: Eventstring in Json umformen und in DuckDB als Json speichern
         self.conn.execute(
             """
-            INSERT INTO opcua_event_logs (timestamp, event)
-            VALUES (?, ?)
+            INSERT INTO opcua_event_logs (timestamp, event, server)
+            VALUES (?, ?, ?)
         """,
-            (timestamp, event),
+            (timestamp, event, server),
         )
 
     def close(self):
