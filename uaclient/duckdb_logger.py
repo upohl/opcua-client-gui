@@ -20,6 +20,14 @@ class DuckDBLogger:
             )
         """
         )
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS opcua_event_logs (
+                timestamp TIMESTAMP,
+                event VARCHAR,
+            )
+        """
+        )
 
     def log_data(self, display_name, node_id, value, data_type, timestamp):
         self.conn.execute(
@@ -28,6 +36,15 @@ class DuckDBLogger:
             VALUES (?, ?, ?, ?, ?)
         """,
             (timestamp, display_name, node_id, str(value), data_type),
+        )
+
+    def log_event(self, event, timestamp):
+        self.conn.execute(
+            """
+            INSERT INTO opcua_event_logs (timestamp, event)
+            VALUES (?, ?)
+        """,
+            (timestamp, event),
         )
 
     def close(self):

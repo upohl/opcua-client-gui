@@ -78,7 +78,7 @@ class EventHandler(QObject):
 
 class EventUI(object):
 
-    def __init__(self, window, uaclient):
+    def __init__(self, window, uaclient, logger):
         self.window = window
         self.uaclient = uaclient
         self._handler = EventHandler()
@@ -94,6 +94,8 @@ class EventUI(object):
         self._handler.event_fired.connect(
             self._update_event_model, type=Qt.QueuedConnection
         )
+
+        self.duckdb_logger = logger
 
         # accept drops
         self.model.canDropMimeData = self.canDropMimeData
@@ -147,7 +149,15 @@ class EventUI(object):
     @trycatchslot
     def _update_event_model(self, event):
         self.model.appendRow([QStandardItem(str(event))])
+        self.log_duckdb(str(event), datetime.now())
 
+    def log_duckdb(self, event, timestamp):
+        if self.duckdb_logger:
+            self.duckdb_logger.log_event(
+                event, timestamp
+            )
+        else:
+            print("DuckDB logger not initialized. Please set up logging first.")
 
 class DataChangeUI(object):
 
@@ -305,6 +315,7 @@ class Window(QMainWindow):
         self.settings.setValue(
             "address_list",
             [
+                "opc.tcp://127.0.0.1:4840",
                 "opc.tcp://vm-388d63f4.test-server.ag:4840",
                 "opc.tcp://localhost.ag:4840",
                 "opc.tcp://localhost:53530/OPCUA/SimulationServer/",
@@ -313,6 +324,7 @@ class Window(QMainWindow):
         self._address_list = self.settings.value(
             "address_list",
             [
+                "opc.tcp://127.0.0.1:4840",
                 "opc.tcp://vm-388d63f4.test-server.ag:4840",
                 "opc.tcp://localhost.ag:4840",
                 "opc.tcp://localhost:53530/OPCUA/SimulationServer/",
@@ -341,7 +353,7 @@ class Window(QMainWindow):
         self.attrs_ui = AttrsWidget(self.ui.attrView)
         self.attrs_ui.error.connect(self.show_error)
         self.datachange_ui = DataChangeUI(self, self.uaclient, self.duckdb_logger)
-        self.event_ui = EventUI(self, self.uaclient)
+        self.event_ui = EventUI(self, self.uaclient, self.duckdb_logger)
         self.graph_ui = GraphUI(self, self.uaclient)
 
         self.ui.addrComboBox.currentTextChanged.connect(self._uri_changed)
