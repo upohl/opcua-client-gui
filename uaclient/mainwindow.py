@@ -294,7 +294,7 @@ class Window(QMainWindow):
 
         # Initialize DuckDBLogger with default path
         self.default_duckdb_path = self.get_default_duckdb_path()
-        self.setup_duckdb_logging(self.default_duckdb_path)
+        self.setup_duckdb_logging()
 
         # fix stuff imposible to do in qtdesigner
         # remove dock titlebar for addressbar
@@ -413,11 +413,10 @@ class Window(QMainWindow):
                 f"DuckDB logging configured successfully!\nPath: {db_path}",
             )
 
-    def setup_duckdb_logging(self, db_path):
+    def setup_duckdb_logging(self):
         if self.duckdb_logger:
             self.duckdb_logger.close()  # Close existing connection if any
-        self.duckdb_logger = DuckDBLogger(db_path)
-        print(f"DuckDB logging set up with path: {db_path}")
+        self.duckdb_logger = DuckDBLogger()
 
     def _uri_changed(self, uri):
         self.uaclient.load_security_settings(uri)
@@ -517,6 +516,7 @@ class Window(QMainWindow):
             self.attrs_ui.clear()
             self.datachange_ui.clear()
             self.event_ui.clear()
+            self.duckdb_logger.close()
 
     def closeEvent(self, event):
         self.tree_ui.save_state()
@@ -592,17 +592,13 @@ class Window(QMainWindow):
 
     # Checks if there is no datachange or eventchange subscribtion. If there is not, the duckdb logger gets closed
     def check_duckdb_connection_after_unsubcribe(self):
-        print("Check DuckDB connection")
-        if len(self.event_ui._subscribed_nodes) == 0 & len(self.datachange_ui._subscribed_nodes) == 0:
+        if len(self.event_ui._subscribed_nodes) == 0 and len(self.datachange_ui._subscribed_nodes) == 0:
             self.duckdb_logger.close()
-            print("DuckDB connection closed")
 
     # checksn if there is a duckdblogger connection before a subscription
     def check_duckdb_connection_before_subcribe(self):
-        print("Check DuckDB connection before subcribe")
         if not self.duckdb_logger.check_if_open()==True:
-            print("Connect to Duckdb")
-            self.duckdb_logger.reconnect(self.default_duckdb_path)
+            self.duckdb_logger.connect(self.default_duckdb_path)
 
 def main():
     app = QApplication(sys.argv)
