@@ -1,15 +1,15 @@
 from setuptools import setup
 
 
-setup(name="opcua-client",
-      version="0.8.4",
-      description="OPC-UA Client GUI",
-      author="Olivier R-D",
-      url='https://github.com/FreeOpcUa/opcua-client-gui',
+setup(name="opcua-client-gui-adesso",
+      version="0.1.0",
+      description="OPC-UA Client GUI build at adesso SE",
+      author="U Pohlmann, C Schlüting",
+      url='https://gitlab.adesso-group.com/77446dc9/opcua-client-gui',
       packages=["uaclient", "uaclient.theme"],
       license="GNU General Public License",
       install_requires=["asyncua", "opcua-widgets>=0.6.0", "PyQt5"],
       entry_points={'console_scripts':
-                    ['opcua-client = uaclient.mainwindow:main']
+                    ['opcua-client-adesso = uaclient.mainwindow:main']
                     }
       )
