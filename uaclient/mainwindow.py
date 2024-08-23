@@ -37,7 +37,6 @@ from uaclient.mainwindow_ui import Ui_MainWindow
 from uaclient.connection_dialog import ConnectionDialog
 from uaclient.application_certificate_dialog import ApplicationCertificateDialog
 from uaclient.graphwidget import GraphUI
-from uaclient.history_widget import HistoryWidget
 
 from uawidgets.attrs_widget import AttrsWidget
 from uawidgets.tree_widget import TreeWidget
