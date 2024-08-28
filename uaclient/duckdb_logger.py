@@ -74,9 +74,9 @@ class DuckDBLogger:
                 notConnected = True
             self.result = self.conn.sql(
                 """
-                SELECT timestamp, display_name, node_id, value, server FROM opcua_logs ORDER BY timestamp DESC LIMIT 10;
+                SELECT timestamp, display_name, node_id, value, server FROM opcua_logs ORDER BY timestamp DESC LIMIT 100;
             """
-            ).fetchmany(10)
+            ).fetchmany(100)
             if notConnected:
                 self.close()
             return self.result

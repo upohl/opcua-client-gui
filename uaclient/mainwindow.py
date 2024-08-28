@@ -15,7 +15,7 @@ from PyQt5.QtCore import (
     QSettings,
     QTextStream,
     QItemSelection,
-    QCoreApplication,
+    QCoreApplication, QAbstractItemModel,
 )
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QIcon
 from PyQt5.QtWidgets import (
@@ -275,7 +275,15 @@ class StaticDataUI(object):
         self.window.ui.staticDataView.setModel(self.model)
         self.window.ui.staticDataView.horizontalHeader().setSectionResizeMode(1)
 
+        self.model.setColumnCount(5)
         self.model.setHorizontalHeaderLabels(['timestamp', 'name', "node_id", "value", "server"])
+
+        self.window.ui.staticDataView.setSortingEnabled(True)
+        self.window.ui.staticDataView.resizeColumnToContents(0)
+        self.window.ui.staticDataView.resizeColumnToContents(1)
+        self.window.ui.staticDataView.resizeColumnToContents(2)
+        self.window.ui.staticDataView.resizeColumnToContents(3)
+        self.window.ui.staticDataView.resizeColumnToContents(4)
 
         self.duckdb_logger = logger
 
@@ -298,6 +306,8 @@ class StaticDataUI(object):
         for item in self.result:
             self.model.appendRow([QStandardItem(str(item[0])), QStandardItem(str(item[1])), QStandardItem(str(item[2])),
                                   QStandardItem(str(item[3])), QStandardItem(str(item[4]))])
+
+
 
     def clear(self):
         # remove all rows but not header!!

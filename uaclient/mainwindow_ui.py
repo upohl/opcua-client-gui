@@ -379,7 +379,7 @@ class Ui_MainWindow(object):
         self.labelNumberOfPoints.setText(_translate("MainWindow", "Number of Points"))
         self.labelIntervall.setText(_translate("MainWindow", "Intervall [s]"))
         self.buttonApply.setText(_translate("MainWindow", "Apply"))
-        self.staticDataDockWidget.setWindowTitle(_translate("MainWindow", "Static Data"))
+        self.staticDataDockWidget.setWindowTitle(_translate("MainWindow", "History View"))
         self.buttonRefresh.setText(_translate("MainWindow", "Refresh"))
         self.actionConnect.setText(_translate("MainWindow", "&Connect"))
         self.actionDisconnect.setText(_translate("MainWindow", "&Disconnect"))

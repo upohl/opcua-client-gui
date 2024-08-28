@@ -468,7 +468,7 @@
     </sizepolicy>
    </property>
    <property name="windowTitle">
-    <string>Static Data</string>
+    <string>History View</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
