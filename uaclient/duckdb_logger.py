@@ -65,3 +65,21 @@ class DuckDBLogger:
             self.duckdb_logger.log_data(
                 node.nodeid.to_string(), val, data.monitored_item.Value.VariantType
             )
+
+    def get_last_10_data(self, path):
+        try:
+            notConnected = False
+            if not self.is_connected:
+                self.connect(path)
+                notConnected = True
+            self.result = self.conn.sql(
+                """
+                SELECT timestamp, display_name, node_id, value, server FROM opcua_logs ORDER BY timestamp DESC LIMIT 100;
+            """
+            ).fetchmany(100)
+            if notConnected:
+                self.close()
+            return self.result
+        except Exception as e:
+            print("Unable to connect to duckdb")
+            return None

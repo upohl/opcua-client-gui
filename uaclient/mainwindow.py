@@ -1,8 +1,6 @@
 #! /usr/bin/env python3
 
 import sys
-import duckdb
-import os
 from pathlib import Path
 
 from datetime import datetime
@@ -17,7 +15,7 @@ from PyQt5.QtCore import (
     QSettings,
     QTextStream,
     QItemSelection,
-    QCoreApplication,
+    QCoreApplication, QAbstractItemModel,
 )
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QIcon
 from PyQt5.QtWidgets import (
@@ -31,8 +29,6 @@ from PyQt5.QtWidgets import (
     QInputDialog,
 )
 
-from uaclient.theme import breeze_resources
-
 from asyncua import ua
 from asyncua.sync import SyncNode
 
@@ -42,7 +38,6 @@ from uaclient.connection_dialog import ConnectionDialog
 from uaclient.application_certificate_dialog import ApplicationCertificateDialog
 from uaclient.graphwidget import GraphUI
 
-from uawidgets import resources  # must be here for ressources even if not used
 from uawidgets.attrs_widget import AttrsWidget
 from uawidgets.tree_widget import TreeWidget
 from uawidgets.refs_widget import RefsWidget
@@ -52,9 +47,7 @@ from uawidgets.call_method_dialog import CallMethodDialog
 
 from uaclient.duckdb_logger import DuckDBLogger
 
-
 logger = logging.getLogger(__name__)
-
 
 class DataChangeHandler(QObject):
     data_change_fired = pyqtSignal(object, str, str)
@@ -68,13 +61,11 @@ class DataChangeHandler(QObject):
             dato = datetime.now().isoformat()
         self.data_change_fired.emit(node, str(val), dato)
 
-
 class EventHandler(QObject):
     event_fired = pyqtSignal(object)
 
     def event_notification(self, event):
         self.event_fired.emit(event)
-
 
 class EventUI(object):
 
@@ -276,6 +267,54 @@ class DataChangeUI(object):
         # ... any other cleanup code ...
         super().closeEvent(event)
 
+class StaticDataUI(object):
+
+    def __init__(self, window, logger):
+        self.window = window
+        self.model = QStandardItemModel()
+        self.window.ui.staticDataView.setModel(self.model)
+        self.window.ui.staticDataView.horizontalHeader().setSectionResizeMode(1)
+
+        self.model.setColumnCount(5)
+        self.model.setHorizontalHeaderLabels(['timestamp', 'name', "node_id", "value", "server"])
+
+        self.window.ui.staticDataView.setSortingEnabled(True)
+        self.window.ui.staticDataView.resizeColumnToContents(0)
+        self.window.ui.staticDataView.resizeColumnToContents(1)
+        self.window.ui.staticDataView.resizeColumnToContents(2)
+        self.window.ui.staticDataView.resizeColumnToContents(3)
+        self.window.ui.staticDataView.resizeColumnToContents(4)
+
+        self.duckdb_logger = logger
+
+        self.window.ui.buttonRefresh.clicked.connect(self.refresh)
+
+        self.result = self.duckdb_logger.get_last_10_data(self.window.default_duckdb_path)
+
+        self.refresh()
+
+        self.timer = QTimer()
+        self.timer.setInterval(5000)
+        self.timer.timeout.connect(self.refresh)
+        self.timer.start()
+
+    def refresh(self):
+        self.result = self.duckdb_logger.get_last_10_data(self.window.default_duckdb_path)
+        if self.result is None:
+            return
+        self.clear()
+        for item in self.result:
+            self.model.appendRow([QStandardItem(str(item[0])), QStandardItem(str(item[1])), QStandardItem(str(item[2])),
+                                  QStandardItem(str(item[3])), QStandardItem(str(item[4]))])
+
+
+
+    def clear(self):
+        # remove all rows but not header!!
+        self.model.removeRows(0, self.model.rowCount())
+        self.node = None
+
+
 
 class Window(QMainWindow):
 
@@ -304,6 +343,7 @@ class Window(QMainWindow):
         self.tabifyDockWidget(self.ui.evDockWidget, self.ui.subDockWidget)
         self.tabifyDockWidget(self.ui.subDockWidget, self.ui.refDockWidget)
         self.tabifyDockWidget(self.ui.refDockWidget, self.ui.graphDockWidget)
+        self.tabifyDockWidget(self.ui.graphDockWidget, self.ui.staticDataDockWidget)
 
         # we only show statusbar in case of errors
         self.ui.statusBar.hide()
@@ -317,6 +357,7 @@ class Window(QMainWindow):
             "address_list",
             [
                 "opc.tcp://127.0.0.1:4840",
+                "opc.tcp://opcua.umati.app:4840",
                 "opc.tcp://vm-388d63f4.test-server.ag:4840",
                 "opc.tcp://localhost.ag:4840",
                 "opc.tcp://localhost:53530/OPCUA/SimulationServer/",
@@ -326,6 +367,7 @@ class Window(QMainWindow):
             "address_list",
             [
                 "opc.tcp://127.0.0.1:4840",
+                "opc.tcp://opcua.umati.app:4840",
                 "opc.tcp://vm-388d63f4.test-server.ag:4840",
                 "opc.tcp://localhost.ag:4840",
                 "opc.tcp://localhost:53530/OPCUA/SimulationServer/",
@@ -356,6 +398,7 @@ class Window(QMainWindow):
         self.datachange_ui = DataChangeUI(self, self.uaclient, self.duckdb_logger)
         self.event_ui = EventUI(self, self.uaclient, self.duckdb_logger)
         self.graph_ui = GraphUI(self, self.uaclient)
+        self.static_ui = StaticDataUI(self, self.duckdb_logger)
 
         self.ui.addrComboBox.currentTextChanged.connect(self._uri_changed)
         self._uri_changed(
@@ -596,6 +639,11 @@ class Window(QMainWindow):
     def check_duckdb_connection_after_unsubcribe(self):
         if len(self.event_ui._subscribed_nodes) == 0 and len(self.datachange_ui._subscribed_nodes) == 0:
             self.duckdb_logger.close()
+
+    def check_if_sub_list_empty(self):
+        if len(self.event_ui._subscribed_nodes) == 0 and len(self.datachange_ui._subscribed_nodes) == 0:
+            return True
+        return False
 
     # checksn if there is a duckdblogger connection before a subscription
     def check_duckdb_connection_before_subcribe(self):
