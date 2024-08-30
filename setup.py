@@ -10,6 +10,7 @@ setup(name="opcua-client-gui-adesso",
       license="GNU General Public License",
       install_requires=["asyncua==1.1.5", "opcua-widgets>=0.6.0", "PyQt5", "duckdb==1.0.0"],
       entry_points={'console_scripts':
-                    ['opcua-client-gui-adesso = uaclient.mainwindow:main']
+                    ['opcua-client-gui-adesso = uaclient.mainwindow:main',
+                     'opcua-client-adesso = uaclient.mainwindow:main']
                     }
       )
