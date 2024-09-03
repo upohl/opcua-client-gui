@@ -27,13 +27,13 @@ What works:
 * call methods
 * plot method values
 * remember last browsed path and restore state
+* history view
 
 TODO (listed after priority):
 
 * remember connections and show connection history
 * detect lost connection and automatically reconnect 
 * gui for loging with certificate or user/password (can currently be done by writting them in uri)
-* Maybe read history
 * Something else?
 
 # How to Install  
