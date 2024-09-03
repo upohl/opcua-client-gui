@@ -19,7 +19,7 @@ What works:
 * browsing with icons per node types
 * showing attributes and references
 * subscribing to variable
-* available on pip: sudo pip install git+https://gitlab.adesso-group.com/77446dc9/opcua-client-gui.git
+* available on pip: sudo pip install git+https://github.com/upohl/opcua-client-gui/opcua-client-gui.git
 * subscribing to events and logging them
 * write variable node values
 * gui for certificates
@@ -27,13 +27,13 @@ What works:
 * call methods
 * plot method values
 * remember last browsed path and restore state
+* history view
 
 TODO (listed after priority):
 
 * remember connections and show connection history
 * detect lost connection and automatically reconnect 
 * gui for loging with certificate or user/password (can currently be done by writting them in uri)
-* Maybe read history
 * Something else?
 
 # How to Install  
@@ -42,15 +42,19 @@ TODO (listed after priority):
 
 ### Linux: (not tested)
 
-1. Make sure python and python-pip is installed  
-2. `pip3 install git+https://gitlab.adesso-group.com/77446dc9/opcua-client-gui.git@duckdb-logger`  
-4. Run with: `opcua-client-adesso`  
+1. Make sure python and python-pip is installed
+2. 'pip3 install opcua-client'
+3. 'pip3 install duckdb'
+4. `pip3 install git+https://github.com/upohl/opcua-client-gui.git@duckdb-logger`  
+5. Run with: `opcua-client-adesso`  
   
 ### Windows:  
 
 1. Install winpython https://winpython.github.io/ , install the version including pyqt5!
-2. Use pip to install opcua-client: `pip install git+https://gitlab.adesso-group.com/77446dc9/opcua-client-gui.git@duckdb-logger`
-3. Run via the script pip created: `YOUR_PYTHON_INSTALL_PATH\Scripts\opcua-client-adesso.exe`
+2. 'pip3 install opcua-client'
+3. 'pip3 install duckdb'
+4. Use pip to install opcua-client: `pip install git+https://github.com/upohl/opcua-client-gui.git@duckdb-logger`
+5. Run via the script pip created: `YOUR_PYTHON_INSTALL_PATH\Scripts\opcua-client-adesso.exe`
 
 To update to the latest release run: `pip install opcua-client --upgrade`
 
@@ -58,6 +62,8 @@ To update to the latest release run: `pip install opcua-client --upgrade`
 
 1. Make sure python, python-pip and homebrew is installed
 2. `brew install pyqt@5`
-3. `pip3 install git+https://gitlab.adesso-group.com/77446dc9/opcua-client-gui.git@duckdb-logger cryptography numpy`
-4. Run with `opcua-client-adesso`
+3. 'pip3 install opcua-client'
+4. 'pip3 install duckdb'
+5. `pip3 install git+https://github.com/upohl/opcua-client-gui.git@duckdb-logger cryptography numpy`
+6. Run with `opcua-client-adesso`
 
